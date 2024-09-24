@@ -1,6 +1,8 @@
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from backend.serializers import UserSerializer
 from django.contrib.auth import authenticate
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
@@ -10,9 +12,16 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+@api_view(['GET'])
+
+def profile(request):
+    print('opa')
+    user = request.user
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
+
 @api_view(['POST'])
 def signup(request):
-
     data = request.data
     first_name = data.get('firstName')
     last_name = data.get('lastName')
@@ -52,4 +61,8 @@ def signin(request):
     if user is None:
         return Response({'error': 'E-mail ou senha incorretos'}, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({'message': 'Autenticação bem-sucedida'}, status=status.HTTP_200_OK)
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }, status=status.HTTP_200_OK)
